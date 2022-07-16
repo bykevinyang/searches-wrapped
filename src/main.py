@@ -1,7 +1,9 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import List
+import networkx as nx
 
+from . import datatypes
 df = pd.read_csv('data/history.csv')
 
 print(df)
@@ -46,6 +48,20 @@ def clump_sittings(df: pd.DataFrame) -> List[pd.DataFrame]:
 
     return clumps
 
-clump = clump_sittings(df)
+clumps = clump_sittings(df)
+# clumps = clump_sittings(df)
 
-print(clump[0])
+graphs: List[nx.DiGraph] = []
+
+for clump in clumps:
+    graph = nx.DiGraph()
+    for search in clump:
+        # print(search)
+        data = datatypes.search(
+            title=search['title'],
+            domain=search['url'].split('//')[1].split('/')[0],
+            url=search['url'],
+            time=datetime_convert(search['date'], search['time'])
+        )
+        graph.add_node(data)
+    graphs.append(graph)
