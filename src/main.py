@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from . import datatypes
 
-df = pd.read_csv('data/history.csv')
+df = pd.read_csv('data/day.csv')
 
 # print(df)
 
@@ -85,10 +85,7 @@ for clump in clumps:
     graphs.append(graph)
 
 G = graphs[0]
-# print(G.edges)
+print(G.edges)
 print(nx.info(G))
-nx.draw_networkx(G, pos = nx.spring_layout(G))
+nx.draw_networkx(G, pos = nx.spring_layout(G), with_labels=True, node_size=10)
 plt.savefig("test.png")
-# def plot_graphs(graphs: List[nx.DiGraph]):
-#     for graph in graphs:
-#         nx.draw(graph, with_labels=True)
