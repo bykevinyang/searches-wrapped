@@ -1,12 +1,14 @@
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 import networkx as nx
+import matplotlib.pyplot as plt
 
 from . import datatypes
+
 df = pd.read_csv('data/history.csv')
 
-print(df)
+# print(df)
 
 def datetime_convert(date: str, time: str) -> datetime:
     time_format = '%m/%d/%Y %H:%M:%S'
@@ -21,17 +23,17 @@ def clump_sittings(df: pd.DataFrame) -> List[pd.DataFrame]:
         # Why did you give me a blank dataframe, lmao
         return []
 
-    reversed_df = df.iloc[::-1]
-    
-    first_row = reversed_df.iloc[0]
+    first_row = df.iloc[-1]
 
     last_time: datetime = datetime_convert(first_row['date'], first_row['time'])
     
 
     current_clump_head = 0
 
-    for idx in reversed_df.index:
-        row = reversed_df.iloc[idx]
+    # for row in reversed_df.iterrows():
+    for idx in reversed(df.index):
+        row = df.iloc[idx]
+        # print(row)
         time_stamp: datetime = datetime_convert(row['date'], row['time'])
 
         # print(f"{last_time} - {time_stamp} = {last_time - time_stamp}")
@@ -49,19 +51,44 @@ def clump_sittings(df: pd.DataFrame) -> List[pd.DataFrame]:
     return clumps
 
 clumps = clump_sittings(df)
+# print(clumps)
 # clumps = clump_sittings(df)
 
 graphs: List[nx.DiGraph] = []
 
 for clump in clumps:
     graph = nx.DiGraph()
+
+    last_domain = ""
+    last_time: datetime = datetime_convert(clump[0]['date'], clump[0]['time'])
+    last_node = datatypes.search(
+        title="",
+        domain="",
+        url="",
+        time=last_time,
+    )
     for search in clump:
-        # print(search)
-        data = datatypes.search(
-            title=search['title'],
-            domain=search['url'].split('//')[1].split('/')[0],
-            url=search['url'],
-            time=datetime_convert(search['date'], search['time'])
-        )
-        graph.add_node(data)
+        current_domain=search['url'].split('//')[1].split('/')[0]
+        if current_domain != last_domain:
+            current_time = datetime_convert(search['date'], search['time'])
+            new_node = datatypes.search(
+                title=search['title'],
+                domain=current_domain,
+                url=search['url'],
+                time=current_time,
+                duration=current_time-last_time
+            )
+            # print(f"Domain: {current_domain} | {current_time} - {last_time} = {current_time - last_time}")
+            last_time = current_time
+            last_domain = current_domain
+        graph.add_edge(last_node, new_node)
     graphs.append(graph)
+
+G = graphs[0]
+# print(G.edges)
+print(nx.info(G))
+nx.draw_networkx(G, pos = nx.spring_layout(G))
+plt.savefig("test.png")
+# def plot_graphs(graphs: List[nx.DiGraph]):
+#     for graph in graphs:
+#         nx.draw(graph, with_labels=True)
